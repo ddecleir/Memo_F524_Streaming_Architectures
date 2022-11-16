@@ -1,0 +1,1 @@
+# Memo_F524_Streaming_Architectures
