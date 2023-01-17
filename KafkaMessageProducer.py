@@ -1,7 +1,3 @@
-"""
-The code use to generate the transactions is coming from the following source :  https://fraud-detection-handbook.github.io/fraud-detection-handbook/Chapter_3_GettingStarted/SimulatedDataset.html
-"""
-
 # Import the necessary modules
 from kafka import KafkaProducer
 import json

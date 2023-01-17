@@ -1,14 +1,9 @@
+"""
+All the code are coming from the following source : https://fraud-detection-handbook.github.io/fraud-detection-handbook/Chapter_3_GettingStarted/SimulatedDataset.html
+"""""
+
 from TransactionsGenerator import *
-import os
-
-import numpy as np
 import pandas as pd
-
-import datetime
-import time
-
-import random
-
 import matplotlib.pyplot as plt
 import seaborn as sns
 

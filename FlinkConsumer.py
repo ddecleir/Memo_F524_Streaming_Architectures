@@ -1,6 +1,6 @@
 #Run with  ../../flink/flink-1.16.0/bin/flink run --python ./FlinkConsummer.py --jarfile ./flink-sql-connector-kafka-1.16.0.jar
 """
-Code are coming from : https://nightlies.apache.org/flink/flink-docs-master/docs/dev/python/datastream/intro_to_datastream_api/
+Part of the code are coming from : https://nightlies.apache.org/flink/flink-docs-master/docs/dev/python/datastream/intro_to_datastream_api/
 """
 from pyflink.common.typeinfo import Types
 from pyflink.datastream import StreamExecutionEnvironment
@@ -10,12 +10,6 @@ from pyflink.datastream.formats.json import JsonRowDeserializationSchema
 from pyflink.datastream.formats.json import JsonRowSerializationSchema
 from pyflink.datastream.connectors.file_system import FileSink, OutputFileConfig
 from pyflink.common.serialization import Encoder
-from pyflink.table import DataTypes
-from cassandra.cluster import Cluster
-from cassandra.query import SimpleStatement
-from cassandra.query import ConsistencyLevel
-from pyflink.datastream.connectors.cassandra import CassandraSink
-from pyflink.table import WriteMode
 
 """ Configuration """
 # Create a StreamExecutionEnvironment
@@ -26,12 +20,10 @@ env = StreamExecutionEnvironment.get_execution_environment()
 deserialization_schema_transaction = JsonRowDeserializationSchema.builder().type_info(type_info=Types.ROW_NAMED(
         ["TRANSACTION_ID", "TX_DATETIME", "CUSTOMER_ID", "TERMINAL_ID", "TX_AMOUNT", "TX_TIME_SECONDS", "TX_TIME_DAYS", "TX_FRAUD", "TX_FRAUD_SCENARIO"]
         ,[Types.INT(), Types.STRING(), Types.INT(), Types.INT(), Types.DOUBLE(), Types.INT(), Types.INT(), Types.INT(), Types.INT()])).build()
-
 transaction_consumer = FlinkKafkaConsumer(
     topics='transaction_topic',
     deserialization_schema=deserialization_schema_transaction,
     properties={'bootstrap.servers': 'localhost:9092', 'group.id': 'test_group'})
-
 ds = env.add_source(transaction_consumer)
 
 """  Store the information capture """
