@@ -30,7 +30,7 @@ apache-flink (pyflink) : pip install apache-flink
 
 cassandra-driver : pip install cassandra-driver
 
-Open 7 linux terminals an type the following commands.
+**Open 7 linux terminals an type the following commands.**
 1. Terminal Zookeeper : 
 **../kafka_2.12-2.8.2/bin/zookeeper-server-start.sh ../kafka_2.12-2.8.2/config/zookeeper.properties**
 
