@@ -17,11 +17,17 @@
 Install the following librairies for Python Version 3.7.16 :
 
 kafka : pip install kafka-python
+
 numpy : pip install numpy
+
 pandas : pip install pandas
+
 matplotlib : pip install matplotlib
+
 seaborn : pip install seaborn
+
 apache-flink (pyflink) : pip install apache-flink
+
 cassandra-driver : pip install cassandra-driver
 
 Open 7 linux terminals an type the following commands.
