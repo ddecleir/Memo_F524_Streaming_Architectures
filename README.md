@@ -13,7 +13,7 @@
 **Cassandra.py** -- Retrieves data from the Kafka producer with the topic 'transaction_sink_topic' and stores it in a local Cassandra database. 
 
 
-#To run the code :
+# To run the code :
 Install the following librairies for Python Version 3.7.16 :
 
 kafka : pip install kafka-python
