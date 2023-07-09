@@ -84,6 +84,7 @@ def create_prediction_model(data):
     # Creation of a test set (20% of the data) and a training set
     X = data.iloc[:, :-1]
     Y = data.iloc[:, -1]
+
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=0)
 
     # Creation of the model

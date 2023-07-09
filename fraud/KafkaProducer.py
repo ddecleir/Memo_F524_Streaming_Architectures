@@ -1,9 +1,7 @@
-# Import the necessary modules
 from kafka import KafkaProducer
 import json
 import time
 from TransactionsGenerator import *
-
 
 def serialize_message(data):
     return json.dumps(data).encode('utf-8')
@@ -26,6 +24,7 @@ def main():
 
     # Generate a continuous stream of data
     customer_size = customer_profiles_table["CUSTOMER_ID"].size
+    customer_count = 0
     for index_customer in range(customer_size):
         customer_id = customer_profiles_table["CUSTOMER_ID"][index_customer]
         x_customer_id = customer_profiles_table["x_customer_id"][index_customer]
@@ -41,8 +40,11 @@ def main():
                          "MEAN_NB_TX_PER_DAY": mean_nb_tx_per_day}
         # Send the message to the 'customer_topic'
         producer.send('customer_topic', serialize_message(customer_data))
+        customer_count += 1
+        time.sleep(0.01) # pause for 10ms to adjust the throughput
 
     terminal_size = terminal_profiles_table["TERMINAL_ID"].size
+    terminal_count = 0
     for index_terminal in range(terminal_size):
         terminal_id = terminal_profiles_table["TERMINAL_ID"][index_terminal]
         x_terminal_id = terminal_profiles_table["x_terminal_id"][index_terminal]
@@ -52,8 +54,11 @@ def main():
                          "Y_TERMINAL_ID": y_terminal_id}
         # Send the message to the 'terminal_topic'
         producer.send('terminal_topic', serialize_message(terminal_data))
+        terminal_count += 1
+        time.sleep(0.01) # pause for 10ms to adjust the throughput
 
     transactions_size = Transactions_df.size
+    transaction_count = 0
     for index_transaction in range(transactions_size):
         transaction_id = Transactions_df["TRANSACTION_ID"][index_transaction]
         tx_datetime = Transactions_df["TX_DATETIME"][index_transaction]
@@ -75,11 +80,14 @@ def main():
                             "TX_FRAUD_SCENARIO": int(tx_fraud_scenario)}
         # Send the message to the 'transaction_topic'
         producer.send('transaction_topic', serialize_message(transaction_data))
-        time.sleep(1)
-        print(transaction_data)
+        transaction_count += 1
+        time.sleep(0.1) # 10 transactions per second
+        with open('logs.txt', 'a') as f:
+            f.write(f"Sent message {transaction_count} at {time.time()}\n")
+        if transaction_count > 10000:
+            break
 
     producer.close()
-
 
 if __name__ == '__main__':
     main()

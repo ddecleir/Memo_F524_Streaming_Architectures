@@ -41,7 +41,7 @@ class RealTimeAnalysis:
 
     def insert_prediction_in_cassandra(self, prediction, transaction_id):
         self.session.execute("INSERT INTO transaction_prediction (transaction_id, prediction) VALUES (%s, %s)",
-                             (transaction_id, prediction))
+                                (transaction_id, prediction))
 
     def transform_data(self, data):
         data = pd.DataFrame(np.array(data))
@@ -101,7 +101,7 @@ class RealTimeAnalysis:
 
             data = [
                 [transaction_id, tx_datetime, tx_amount, tx_time_seconds, tx_time_days, x_terminal_id, y_terminal_id,
-                 x_customer_id, y_customer_id, mean_account, std_account, mean_nb_tx_per_day, tx_fraud]]
+                    x_customer_id, y_customer_id, mean_account, std_account, mean_nb_tx_per_day, tx_fraud]]
             data = self.transform_data(data)
             # I will use the model to predict the fraud
             prediction = ModelML.make_a_prediction(model, data)

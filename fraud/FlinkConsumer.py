@@ -12,6 +12,9 @@ from pyflink.datastream.connectors.kafka import FlinkKafkaConsumer
 from pyflink.datastream.formats.json import JsonRowDeserializationSchema
 from pyflink.datastream.connectors.file_system import FileSink, OutputFileConfig
 from pyflink.common.serialization import Encoder
+import time
+from pyflink.table.udf import udf
+from pyflink.table.types import RowType
 
 env = StreamExecutionEnvironment.get_execution_environment()
 table_env = StreamTableEnvironment.create(env)
@@ -67,7 +70,10 @@ kafka_producer_prediction = FlinkKafkaProducer(
     serialization_schema=serialization_schema_transaction,
     producer_config={'bootstrap.servers': 'localhost:9092', 'group.id': 'test_group'})
 
+
+
 def main():
+
     terminals = table_env.from_data_stream(ds_terminals)
     customers = table_env.from_data_stream(ds_customers)
     transactions = table_env.from_data_stream(ds_transactions)
@@ -86,8 +92,8 @@ def main():
                                        "transactions t, terminals te, customers "
                                        "c WHERE t.TERMINAL_ID = te.TERMINAL_ID AND t.CUSTOMER_ID = c.CUSTOMER_ID")
 
-
     output = table_env.to_data_stream(output_table)
+
     output.add_sink(kafka_producer)
     output.add_sink(kafka_producer_prediction)
     output.print()

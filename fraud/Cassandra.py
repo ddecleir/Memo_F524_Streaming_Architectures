@@ -1,17 +1,13 @@
-import os
-import time
-
 from kafka import KafkaConsumer
 from cassandra.cluster import Cluster
 from cassandra.query import SimpleStatement
 from cassandra.query import ConsistencyLevel
 import json
-
+import time
 
 def main(tableName):
     # Set up the Kafka consumer
     kafka_server = ["localhost:9092"]
-
     transaction_consumer = KafkaConsumer(
         "output_topic",
         bootstrap_servers=kafka_server,
@@ -39,10 +35,10 @@ def main(tableName):
                                               "(transaction_id, tx_datetime, tx_amount, tx_time_seconds, "
                                               "tx_time_days, x_terminal_id, y_terminal_id, x_customer_id, "
                                               "y_customer_id, mean_account, std_account, mean_nb_tx_per_day, tx_fraud) "
-                                              " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                                              consistency_level=ConsistencyLevel.ONE)
+                                              " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s)",
+                                                consistency_level=ConsistencyLevel.LOCAL_ONE)
 
-    # Consume messages from Kafka and insert them into Cassandra
+    transaction_count = 0
     for message in transaction_consumer:
         values = json.loads(message.value)
         transaction_id = values["TRANSACTION_ID"]
@@ -63,7 +59,11 @@ def main(tableName):
             transaction_id, tx_datetime, tx_amount, tx_time_seconds, tx_time_days, x_terminal_id, y_terminal_id,
             x_customer_id, y_customer_id, mean_account, std_account, mean_nb_tx_per_day, tx_fraud))
 
-        print(transaction_id, " ", tx_datetime, "added")
+        transaction_count += 1
+        print("Inserted transaction " + str(transaction_count) + " at " + str(time.time()))
+        with open('logs.txt', 'a') as f:
+            f.write(f"Inserted {transaction_count} at {time.time()}\n")
 
-if __name__ == '__main__':
-    main("transactionsRL")
+if __name__ == "__main__":
+    tableName = "transactionsrl"
+    main(tableName)
