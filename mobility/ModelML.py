@@ -14,17 +14,39 @@ from cassandra.query import ConsistencyLevel
 import pickle
 import matplotlib.pyplot as pl
 from pandas.plotting import scatter_matrix
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 import time
 
-def retrieve_data_from_cassandra():
+def evaluate_model(model, X_test, Y_test):
+    # Evaluate the model with regression metrics
+    y_pred = model.predict(X_test)
+
+    mean_absolute_error_value = mean_absolute_error(Y_test, y_pred)
+    mean_squared_error_value = mean_squared_error(Y_test, y_pred)
+    root_mean_squared_error_value = np.sqrt(mean_squared_error(Y_test, y_pred))
+
+    return mean_absolute_error_value, mean_squared_error_value, root_mean_squared_error_value
+
+
+
+def print_evaluation_metrics(model_name, accuracy, precision, recall, f1, auc_roc):
+    #Print the evaluation metrics
+    print(f"Performance metrics for {model_name}:")
+    print(f"Accuracy: {accuracy}")
+    print(f"Precision: {precision}")
+    print(f"Recall: {recall}")
+    print(f"F1-score: {f1}")
+    print(f"AUC-ROC: {auc_roc}\n")
+
+def retrieve_data_from_cassandra(tableName):
     # connect to cassandra
     cluster = Cluster(["127.0.0.1"])
     session = cluster.connect()
 
     # retrieve the data from cassandra
-    rows = session.execute("SELECT * FROM brusselmobility.temp_data")
+    rows = session.execute("SELECT * FROM brusselmobility."+tableName)
 
     data = []
     for row in rows:
@@ -66,8 +88,8 @@ def missing_data_treatment(data):
     return data
 
 
-def generate_a_dataframe_ready_for_the_model():
-    data = retrieve_data_from_cassandra()
+def generate_a_dataframe_ready_for_the_model(tableName):
+    data = retrieve_data_from_cassandra(tableName)
     # rename the columns
     data.columns = ['ID', 'REQUEST_DATE', 'T1_M1_COUNT', 'T1_M1_SPEED', 'T1_M1_OCCUPANCY', 'T1_M1_START_TIME',
                     'T1_M1_END_TIME', 'T1_5M_COUNT', 'T1_5M_SPEED', 'T1_5M_OCCUPANCY', 'T1_5M_START_TIME',
@@ -82,57 +104,69 @@ def generate_a_dataframe_ready_for_the_model():
 
     # I need to scale the data to have a better accuracy
     # I will use the StandardScaler function from sklearn to scale the data except the ID column
-    scaler = StandardScaler()
-    data.iloc[:, 1:] = scaler.fit_transform(data.iloc[:, 1:])
+    encoder = StandardScaler()
+    data.iloc[:, 1:-1] = encoder.fit_transform(data.iloc[:, 1:-1])
+    # remove the first column which only contains an ID for each transaction
+    #data = data.iloc[:, 1:]
+    #data['ID'] = range(1, len(data) + 1)
 
-    # I need to convert the column ID to a numerical value
-    # I will use the LabelEncoder function from sklearn to convert the ID column
-    # Create a data structure that keeps in memory the mapping between the numerical value and the ID
-    le = LabelEncoder()
-    data.iloc[:, 0] = le.fit_transform(data.iloc[:, 0])
-    id_mapping = dict(zip(le.classes_, le.transform(le.classes_)))
+    # Save the scaler for future use
+    with open("scaler.pkl", "wb") as scaler_file:
+        pickle.dump(encoder, scaler_file)
+
     print(data)
-    print(id_mapping)
-    return data, id_mapping
+    return data
 
 
-def create_prediction_model(data, id_mapping):
-    # Séparation des données en ensembles d'entrainement et de test
-    train, test = train_test_split(data, test_size=0.2, random_state=42)
+def create_prediction_model(data):
+    # ...
+    # Séparation des données en ensembles d'entraînement et de test
+    target_col = 'T1_60M_END_TIME'
+    id_pred = "MON_TD1"
+    # Gardez uniquement les données dans 'data' avec ID == id_pred
+    data = data[data['ID'] == id_pred]
+    # X doit contenir toutes les données sauf target_col
+    X = data.drop(columns=[target_col])
+    # Supprimez également la colonne 'ID'
+    X = X.drop(columns=['ID'])
+    # Y doit contenir uniquement target_col
+    Y = data[target_col]
+    print("X: ", X)
+    print("Y: ", Y)
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=0)
 
-    # ID pour lequel on souhaite faire la prédiction
-    id_pred = 0
+    # Utilisez un modèle de régression
+    model_random = RandomForestRegressor()
+    model_random.fit(X_train, Y_train)
+    # Prédiction
+    predicted = model_random.predict(X_test)
+    print("Predicted: ", predicted)
+    # Évaluation du modèle
+    print('Accuracy of the Random Forest Regressor model: ', model_random.score(X_test, Y_test))
 
-    # Séparation des données en ensembles d'entrainement et de test pour l'ID choisi
-    X_train = train[train['ID'] == id_pred]
-    X_test = test[test['ID'] == id_pred]
-
-    # Colonne target pour l'ID spécifié
-    target_col = 'T1_M1_COUNT'
-    y_train = X_train[target_col]
-    y_test = X_test[target_col]
-
-    # Suppression de la colonne target
-    X_train = X_train.drop(columns=[target_col])
-    X_test = X_test.drop(columns=[target_col])
-
-    # Entrainement du modèle
-    model = RandomForestRegressor(n_estimators=100, random_state=42)
-    model.fit(X_train, y_train)
-
-    # Prédiction sur les données de test
-    # Pour faire des prédictions sur tranche de données précises, je ne sélectionne qu'un sous ensemble des valeurs de X associée à mon ID
-    y_pred = model.predict(X_test)
-
-    # Calcul de l'erreur
-    print("Random Forest Regression Model Evaluation Metrics for ID: ", id_pred)
-    print('Mean Absolute Error:', mean_absolute_error(y_test, y_pred))
-    print('Mean Squared Error:', mean_squared_error(y_test, y_pred))
-    print('Root Mean Squared Error:', np.sqrt(mean_squared_error(y_test, y_pred)))
+    # Sauvegardez le modèle pour une utilisation future
+    save_model(model_random)
 
     return
 
 
+def save_model(model):
+    """ Save the model """
+    with open('./model', 'wb') as f:
+        pickle.dump(model, f)
+
+def import_model():
+    """ Import the model """
+    with open('./model', 'rb') as f:
+        model = pickle.load(f)
+    return model
+
+def make_a_prediction(model, line):
+    """ Make a prediction with the model and the line  """
+    return model.predict(line)
+
 if __name__ == '__main__':
-    data, id_mapping = generate_a_dataframe_ready_for_the_model()
-    create_prediction_model(data, id_mapping)
+    #data, id_mapping = generate_a_dataframe_ready_for_the_model("temp_data")
+    #create_prediction_model(data, id_mapping)
+    data = generate_a_dataframe_ready_for_the_model("temp_data")
+    create_prediction_model(data)

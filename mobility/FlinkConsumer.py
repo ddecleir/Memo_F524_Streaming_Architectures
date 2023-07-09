@@ -29,14 +29,6 @@ transport_stream = FlinkKafkaConsumer(
     properties={'bootstrap.servers': 'localhost:9092', 'group.id': 'test_group'})
 ds_transport = env.add_source(transport_stream)
 
-"""  Store the information capture in local """
-output_path = 'mobility_output'
-file_sink = FileSink \
-    .for_row_format(output_path, Encoder.simple_string_encoder()) \
-    .with_output_file_config(OutputFileConfig.builder().with_part_prefix('pre').with_part_suffix('suf').build()) \
-    .build()
-
-
 """ Send the data to Cassandra"""
 serialization_schema_transaction = JsonRowSerializationSchema.builder().with_type_info(type_info=Types.ROW_NAMED(
         ["id", "requestDate", "1m_t1_count", "1m_t1_speed", "1m_t1_occupancy", "1m_t1_start_time", "1m_t1_end_time", "5m_t1_count", "5m_t1_speed", "5m_t1_occupancy", "5m_t1_start_time", "5m_t1_end_time", "15m_t1_count", "15m_t1_speed", "15m_t1_occupancy", "15m_t1_start_time", "15m_t1_end_time", "60m_t1_count", "60m_t1_speed", "60m_t1_occupancy", "60m_t1_start_time", "60m_t1_end_time"]
@@ -46,14 +38,22 @@ kafka_producer = FlinkKafkaProducer(
     serialization_schema=serialization_schema_transaction,
     producer_config={'bootstrap.servers': 'localhost:9092', 'group.id': 'test_group'})
 
+""" Send the data for real time prediction and visualization """
+kafka_producer_prediction = FlinkKafkaProducer(
+    topic='prediction_topic',
+    serialization_schema=serialization_schema_transaction,
+    producer_config={'bootstrap.servers': 'localhost:9092', 'group.id': 'test_group'})
+
 def main():
     transport_data = table_env.from_data_stream(ds_transport)
     table_env.create_temporary_view("transport_data", transport_data)
     print(table_env.from_path("transport_data").print_schema())
     output_table = table_env.sql_query("SELECT * FROM transport_data")
+
     output = table_env.to_data_stream(output_table)
-    output.sink_to(file_sink)
+
     output.add_sink(kafka_producer)
+    output.add_sink(kafka_producer_prediction)
     env.execute()
 
 if __name__ == '__main__':
