@@ -29,18 +29,16 @@ Once you've pulled the Docker images:
 ### Requirements
 The necessary Python libraries are already integrated into the Docker images. However, for reference, here's the list:
 
-makefile
-Copy code
-kafka-python==2.0.2
-numpy==1.21.6
-pandas==1.3.5
-matplotlib==3.3.4
-seaborn==0.11.1
-apache-flink==1.17.1
-cassandra-driver==3.25.0
-scikit-learn==1.3.0
-pyflink==1.0
-flask==2.3.2
+- kafka-python==2.0.2
+- numpy==1.21.6
+- pandas==1.3.5
+- matplotlib==3.3.4
+- seaborn==0.11.1
+- apache-flink==1.17.1
+- cassandra-driver==3.25.0
+- scikit-learn==1.3.0
+- pyflink==1.0
+- flask==2.3.2
 
 ### Additional Tools
 It's recommended to install tmux for a better experience while working with multiple terminal windows. This allows for simultaneous monitoring and management of different components of the project.
