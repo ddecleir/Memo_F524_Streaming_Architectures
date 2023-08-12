@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Real Time Analysis Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 90%;
+            margin: 0 auto;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:hover {background-color: #f5f5f5;}
+        .counter {
+            font-size: 24px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Real Time Analysis Dashboard</h1>
+
+        <form action="/" method="post">
+            <select name="id_target">
+                {% for id in ids %}
+                    <option value="{{ id }}">{{ id }}</option>
+                {% endfor %}
+            </select>
+            <select name="id_col">
+                {% for col in target_cols %}
+                    <option value="{{ col }}">{{ col }}</option>
+                {% endfor %}
+            </select>
+            <input type="submit" value="Train and Start Prediction">
+        </form>
+
+        <h2>Transactions</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Transaction ID</th>
+                    <th>Prediction</th>
+                    <th>Prediction Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in transactions %}
+                    <tr>
+                        <td>{{ transaction.transaction_id }}</td>
+                        <td>{{ transaction.prediction }}</td>
+                        <td>{{ transaction.prediction_time }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
